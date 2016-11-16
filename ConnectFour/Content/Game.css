@@ -1,0 +1,20 @@
+﻿#gameGrid {
+    border: 1px solid green;
+    margin-top: 15px;
+}
+#gameStatus {
+    position: relative;
+    top: 35px;
+}
+#gameStatus li .bullet {
+    background-color: #FFFF00;
+}
+#gameStatus li:hover .bullet {
+    background-color: #E6E61A;
+}
+#gameStatus li.info {
+    margin: 2px 0;
+    font-size: 24px;
+    float: left;
+    clear: left;
+}

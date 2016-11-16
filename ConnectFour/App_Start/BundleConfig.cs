@@ -20,12 +20,17 @@ namespace ConnectFour
                         "~/Scripts/modernizr-*"));
 
             bundles.Add(new ScriptBundle("~/bundles/bootstrap").Include(
-                      "~/Scripts/bootstrap.js",
+                      //"~/Scripts/bootstrap.js",
                       "~/Scripts/respond.js"));
 
+            // game logic
+            bundles.Add(new ScriptBundle("~/bundles/game").Include(
+                      "~/Scripts/game.js"));
+
             bundles.Add(new StyleBundle("~/Content/css").Include(
-                      "~/Content/bootstrap.css",
-                      "~/Content/site.css"));
+                      //"~/Content/bootstrap.css",
+                      "~/Content/site.css",
+                      "~/Content/game.css"));
         }
     }
 }

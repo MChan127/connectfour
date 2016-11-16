@@ -3,6 +3,8 @@ using System.Security.Claims;
 using System.Threading.Tasks;
 using Microsoft.AspNet.Identity;
 using Microsoft.AspNet.Identity.EntityFramework;
+using System.Collections.Generic;
+using System.Data.Entity.ModelConfiguration.Conventions;
 
 namespace ConnectFour.Models
 {
@@ -16,6 +18,9 @@ namespace ConnectFour.Models
             // Add custom user claims here
             return userIdentity;
         }
+
+        public virtual ICollection<Room> Rooms { get; set; }
+        public virtual ICollection<Move> Moves { get; set; }
     }
 
     public class ApplicationDbContext : IdentityDbContext<ApplicationUser>
@@ -29,5 +34,8 @@ namespace ConnectFour.Models
         {
             return new ApplicationDbContext();
         }
+
+        public DbSet<Room> Room { get; set; }
+        public DbSet<Move> Move { get; set; }
     }
 }

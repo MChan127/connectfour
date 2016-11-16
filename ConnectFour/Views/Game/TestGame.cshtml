@@ -1,0 +1,60 @@
+﻿@model ConnectFour.Models.Room
+
+@{
+    ViewBag.Title = "TestGame";
+}
+
+<style>
+    #nav #title {
+        margin-top: 15px;
+    }
+    #content {
+        margin-top: 0;
+    }
+</style>
+<canvas id="gameGrid"></canvas>
+
+@section GameMenu {
+    <ul id="gameStatus">
+        <li class="info">
+            Game Status: <span class="game_status">@ViewBag.gameStatusMsg</span>
+        </li>
+        @if (Model.Status.ToString() == "playing")
+        {
+            <li class="info">
+                Turn: <span class="turn_number">@ViewBag.numberOfTurns</span>
+            </li>
+            <li class="info">
+                <span class="current_turn_msg" style="color: #FFFF00;">@ViewBag.currentTurnMsg</span>
+            </li>
+            <li><a href="@Url.Action("Concede", "Game")" alt="Concede" title="Concede"><span class="bullet">&nbsp;</span>Concede</a></li>
+        }
+    </ul>
+}
+@section Scripts {
+    <script src="~/Scripts/jquery.signalR-2.1.0.min.js"></script>
+    <script src="~/signalr/hubs"></script>
+    <script>
+        $(function () {
+            var gameHub = $.connection.chatHub;
+            // function called by hub when the opponent finishes making a move
+            gameHub.client.addMove = function (moveData) {
+
+            };
+            // function called by hub when the game status changes, such as when
+            // a player wins or loses
+            gameHub.client.updateGameStatus = function (newStatus) {
+
+            };
+            $.connection.hub.start().done(function () {
+                // join the current room
+                gameHub.server.joinGame(@Model.ID);
+
+                // if the current player is not the author of the room,
+                // this means that the game has two participants and it may start
+                // ...
+            });
+        });
+    </script>
+    @Scripts.Render("~/bundles/game")
+}
