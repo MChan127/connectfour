@@ -1,4 +1,7 @@
-﻿<!DOCTYPE html>
+﻿@using Microsoft.AspNet.Identity
+@using System.Security.Claims;
+
+<!DOCTYPE html>
 <html>
 <head>
     <meta charset="utf-8" />
@@ -14,10 +17,34 @@
         </div>
         <div id="nav">
             <div id="title">Connect Four</div>
-
+            @if (Request.IsAuthenticated)
+            {
+                string username = ((ClaimsIdentity)User.Identity).FindFirst("username").Value;
+                using (Html.BeginForm("LogOff", "Account", FormMethod.Post, new { id = "logoutForm", @class = "navbar-right" }))
+                {
+                    <text>
+                        @Html.AntiForgeryToken()
+                        <div id="welcomeMsg">
+                            <p>
+                                Welcome, @username!<br/>
+                                <a href="javascript:document.getElementById('logoutForm').submit()" style="text-decoration: underline;"
+                                    alt="Log Out" title="Log Out"
+                                >Log Out</a>
+                            </p>
+                        </div>
+                    </text>
+                }
+            }
             <ul>
                 <li><a href="@Url.Action("Index", "Home")" alt="Home" title="Home"><span class="bullet">&nbsp;</span>Home</a></li>
-                <li><a href="@Url.Action("Login", "Account")" alt="Login" title="Login"><span class="bullet">&nbsp;</span>Login</a></li>
+                @if (Request.IsAuthenticated)
+                {
+                    <li><a href="@Url.Action("Index", "Game")" alt="Lobby" title="Lobby"><span class="bullet">&nbsp;</span>Lobby</a></li>
+                }
+                else
+                {
+                    <li><a href="@Url.Action("Login", "Account")" alt="Login" title="Login"><span class="bullet">&nbsp;</span>Login</a></li>
+                }
                 <li><a href="@Url.Action("About", "Home")" alt="About" title="About"><span class="bullet">&nbsp;</span>About</a></li>
                 <li><a href="@Url.Action("Contact", "Home")" alt="Contact" title="Contact"><span class="bullet">&nbsp;</span>Contact</a></li>
             </ul>

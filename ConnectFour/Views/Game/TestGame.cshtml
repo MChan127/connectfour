@@ -1,12 +1,14 @@
-﻿@model ConnectFour.Models.Room
+﻿@using Microsoft.AspNet.Identity
+@model ConnectFour.Models.Room
 
 @{
     ViewBag.Title = "TestGame";
+    bool isAuthor = Model.AuthorID == User.Identity.GetUserId();
 }
 
 <style>
     #nav #title {
-        margin-top: 15px;
+        margin-top: 50px;
     }
     #content {
         margin-top: 0;
@@ -17,42 +19,87 @@
 @section GameMenu {
     <ul id="gameStatus">
         <li class="info">
-            Game Status: <span class="game_status">@ViewBag.gameStatusMsg</span>
+            Game Status: <span class="game_status">Waiting for opponent...</span>
         </li>
-        @if (Model.Status.ToString() == "playing")
-        {
-            <li class="info">
-                Turn: <span class="turn_number">@ViewBag.numberOfTurns</span>
-            </li>
-            <li class="info">
-                <span class="current_turn_msg" style="color: #FFFF00;">@ViewBag.currentTurnMsg</span>
-            </li>
-            <li><a href="@Url.Action("Concede", "Game")" alt="Concede" title="Concede"><span class="bullet">&nbsp;</span>Concede</a></li>
-        }
+        <li class="info" style="display: none;">
+            Turn: <span class="turn_number"></span>
+        </li>
+        <li class="info" style="display: none;">
+            <span class="current_turn_msg" style="color: #FFFF00;"></span>
+        </li>
+        <li><a href="@Url.Action("Leave", "Game")" alt="Leave Game" title="Leave Game"><span class="bullet">&nbsp;</span>Leave Game</a></li>
     </ul>
 }
 @section Scripts {
-    <script src="~/Scripts/jquery.signalR-2.1.0.min.js"></script>
+    <script src="~/Scripts/jquery.signalR-2.2.1.min.js"></script>
     <script src="~/signalr/hubs"></script>
     <script>
         $(function () {
-            var gameHub = $.connection.chatHub;
+            var $gameStatus = $('#gameStatus');
+            var $gameStatusMsg = $gameStatus.find('.game_status');
+            var $turnNumber = $gameStatus.find('.turn_number');
+            var $currentTurnMsg = $gameStatus.find('.current_turn_msg');
+            var currentTurn = 0;
+            var activePlayer = null;
+            var activePlayerMsgs = {
+                0: @isAuthor.ToString().ToLower() ? "It is now your turn." : "It is the opponent's turn.",
+                1: @isAuthor.ToString().ToLower() ? "It is the opponent's turn." : "It is now your turn"
+            }
+        
+            var gameHub = $.connection.gameHub;
             // function called by hub when the opponent finishes making a move
             gameHub.client.addMove = function (moveData) {
 
             };
+
             // function called by hub when the game status changes, such as when
             // a player wins or loses
-            gameHub.client.updateGameStatus = function (newStatus) {
+            // possible values of newStatus:
+            // 0 = game start
+            // 1 = loss
+            // 2 = victory
+            // 3 = opponent left the game
+            gameHub.client.updateGameStatus = function (newStatus, data) {
+                if (data === undefined) {
+                    data = {};
+                }
+                console.log(newStatus);
+                console.log(data);
 
+                if (newStatus == 0) {
+                    $gameStatusMsg.text('Game in progress.');
+                    $turnNumber.text(++currentTurn);
+                    activePlayer = data.first_turn;
+                    $currentTurnMsg.text(activePlayerMsgs[activePlayer]);
+                } else if (newStatus == 1) {
+
+                } else if (newStatus == 2) {
+
+                } else if (newStatus == 3) {
+
+                }
             };
-            $.connection.hub.start().done(function () {
-                // join the current room
-                gameHub.server.joinGame(@Model.ID);
 
+            function joinGame() {
+                // join the current room
+                return gameHub.server.joinGame(@Model.ID);
+            };
+            function startGame() {
+                var deferred = $.Deferred();
                 // if the current player is not the author of the room,
                 // this means that the game has two participants and it may start
-                // ...
+                @if (!isAuthor)
+                {
+                    <text>
+                        console.log("starting game...");
+                        return gameHub.server.startGame(@Model.ID);
+                    </text>
+                }
+                console.log("waiting for opponent...");
+                return deferred.resolve();
+            }
+            $.connection.hub.start().done().then(joinGame).then(startGame).fail(function(error) {
+                alert(error);
             });
         });
     </script>

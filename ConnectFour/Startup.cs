@@ -1,4 +1,6 @@
-﻿using Microsoft.Owin;
+﻿using ConnectFour.Hubs;
+using Microsoft.AspNet.SignalR;
+using Microsoft.Owin;
 using Owin;
 
 [assembly: OwinStartupAttribute(typeof(ConnectFour.Startup))]
@@ -9,6 +11,7 @@ namespace ConnectFour
         public void Configuration(IAppBuilder app)
         {
             ConfigureAuth(app);
+            app.MapSignalR();
         }
     }
 }

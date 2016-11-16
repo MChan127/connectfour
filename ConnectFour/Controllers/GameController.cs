@@ -1,5 +1,6 @@
 ﻿using ConnectFour.Helpers;
 using ConnectFour.Models;
+using Microsoft.AspNet.Identity;
 using Newtonsoft.Json;
 using System;
 using System.Collections.Generic;
@@ -17,57 +18,16 @@ namespace ConnectFour.Controllers
 
         // GET: Game
         // game lobby
+        [Authorize]
         public ActionResult Index()
         {
             return View();
-        }
-
-        /*[HttpGet]
-        public ActionResult GetGameInfo(int ID)
-        {
-            // check if the current player is logged in
-            // ...
-
-            // check if the current player belongs to or is the author of the room
-            // ...
-
-            Room room = db.Room.Find(ID);
-            return Json(GameLogic.getGameInfo(room), JsonRequestBehavior.AllowGet);
-        }*/
-
-        // starts the game when both players have entered the room
-        // the server randomly then chooses which player goes first
-        [HttpPost]
-        public ActionResult StartGame(int roomID)
-        {
-            // ...
-            return Json(new { });
-        }
-        // update game by adding a move
-        // server determines if the move is allowed or not
-        // if not, move is rejected and message is displayed to the player
-        // if so, game logic checks if the player has won the game using that move
-        [HttpPost]
-        public ActionResult AddMove(int roomID, int playerID, int XPos, int YPos)
-        {
-            // ...
-            return Json(new { });
-        }
-        // player leaves the game, causing them to lose
-        [HttpPost]
-        public ActionResult Concede(int roomID, int playerID)
-        {
-            // ...
-            return Json(new { });
         }
 
         // for testing and developing the game itself
         [Authorize]
         public ActionResult TestGame()
         {
-            // check that the current player is logged in
-            // ...
-
             Room room = db.Room.Where(Room => Room.Name == "Test Room").FirstOrDefault();
             // check if room exists
             if (room == null)
@@ -81,8 +41,8 @@ namespace ConnectFour.Controllers
                 return new HttpStatusCodeResult(HttpStatusCode.Forbidden);
             }
 
-            // get room info including its current status, turn count, etc.
-            GameLogic.loadGameInfo(room, ViewBag);
+            //string playerID = User.Identity.GetUserId();
+            //ViewBag.thisUserId = playerID;
 
             return View(room);
         }

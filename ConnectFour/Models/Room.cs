@@ -5,7 +5,7 @@ using System.ComponentModel.DataAnnotations.Schema;
 
 namespace ConnectFour.Models
 {
-    public enum Status { waiting, playing, finished }
+    public enum RoomStatus { waiting, playing, finished }
     public class Room
     {
         [Key]
@@ -27,7 +27,7 @@ namespace ConnectFour.Models
         public string Password { get; set; }
         public DateTime CreatedAt { get; set; }
         public DateTime UpdatedAt { get; set; }
-        public Status Status { get; set; }
+        public string Status { get; set; }
         
         public virtual ICollection<Move> Moves { get; set; }
     }

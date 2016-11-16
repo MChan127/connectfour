@@ -8,8 +8,10 @@ body {
     color: #ffffff;
 }
 a {
-    text-decoration: none;
-    color: inherit;
+    color: #FF6991;
+}
+a:hover {
+    color: #FF8CAB;
 }
 #wrapper {
     background-color: #000000;
@@ -35,6 +37,12 @@ a {
 #nav {
     border-left: 60px solid #72B133;
     background-color: #80CA35;
+    position: relative;
+}
+#welcomeMsg {
+    position: absolute;
+    top: -5px;
+    left: 21px;
 }
 #nav #title {
     font-family: "Coiny", sans-serif;
@@ -67,9 +75,13 @@ a {
     border-radius: 3px;
 
     position: relative;
+    
+    text-decoration: none;
+    color: inherit;
 }
 #nav li a:hover {
     letter-spacing: 7px;
+    color: inherit;
 }
 #nav li a:hover span {
     background-color: #F72E2E;
