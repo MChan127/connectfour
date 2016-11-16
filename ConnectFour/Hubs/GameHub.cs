@@ -53,7 +53,7 @@ namespace ConnectFour.Hubs
                 {
                     throw new Exception("The game is currently in progress.");
                 }
-                Debug.WriteLine(Context.ConnectionId);
+                Debug.WriteLine("connection id: " + Context.ConnectionId);
                 await Groups.Add(Context.ConnectionId, roomName);
             } catch (Exception e)
             {
@@ -63,8 +63,6 @@ namespace ConnectFour.Hubs
 
         public async Task startGame(int roomID)
         {
-            try
-            {
                 Room room = db.Room.Find(roomID);
                 // check that room exists
                 if (room == null)
@@ -78,8 +76,8 @@ namespace ConnectFour.Hubs
                 }
 
                 // update room information
-                room.Status = RoomStatus.playing.ToString();
-                room.OpponentID = ((ClaimsIdentity)Context.User).FindFirst(ClaimTypes.NameIdentifier).Value;
+                room.Status = (int)RoomStatus.playing;
+                room.OpponentID = ((ClaimsIdentity)Context.User.Identity).FindFirst(ClaimTypes.NameIdentifier).Value;
                 // randomly decide which player goes first
                 Random coinFlip = new Random();
                 int firstTurn = coinFlip.Next(0, 2); // if 0, then the author goes first; if 1, the opponent goes first
@@ -92,10 +90,6 @@ namespace ConnectFour.Hubs
                 {
                     first_turn = firstTurn
                 });
-            } catch (Exception e)
-            {
-                throw e;
-            }
         }
     }
 }

@@ -63,14 +63,15 @@
                 if (data === undefined) {
                     data = {};
                 }
-                console.log(newStatus);
-                console.log(data);
 
                 if (newStatus == 0) {
                     $gameStatusMsg.text('Game in progress.');
                     $turnNumber.text(++currentTurn);
                     activePlayer = data.first_turn;
                     $currentTurnMsg.text(activePlayerMsgs[activePlayer]);
+
+                    $turnNumber.closest('.info').fadeIn(50);
+                    $currentTurnMsg.closest('.info').fadeIn(50);
                 } else if (newStatus == 1) {
 
                 } else if (newStatus == 2) {

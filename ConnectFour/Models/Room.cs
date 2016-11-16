@@ -27,7 +27,7 @@ namespace ConnectFour.Models
         public string Password { get; set; }
         public DateTime CreatedAt { get; set; }
         public DateTime UpdatedAt { get; set; }
-        public string Status { get; set; }
+        public int? Status { get; set; }
         
         public virtual ICollection<Move> Moves { get; set; }
     }
