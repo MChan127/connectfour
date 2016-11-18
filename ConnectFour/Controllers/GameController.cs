@@ -1,5 +1,4 @@
-﻿using ConnectFour.Helpers;
-using ConnectFour.Models;
+﻿using ConnectFour.Models;
 using Microsoft.AspNet.Identity;
 using Newtonsoft.Json;
 using System;

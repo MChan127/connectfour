@@ -2,6 +2,10 @@
     border: 1px solid green;
     margin-top: 15px;
 }
+#gameBoard {
+    position: absolute;
+    z-index: 100;
+}
 #gameStatus {
     position: relative;
     top: 35px;
