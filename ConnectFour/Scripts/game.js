@@ -2,6 +2,7 @@
     // global game variables
     isAuthor: null,
     roomID: null,
+    gameInProgress: false,
     //currentTurn: null,
     activePlayer: null, // currently active player (represented by 0 or 1)
     gameSpaces: null,
@@ -26,6 +27,7 @@
     // statuses
     placingPiece: false,
     turnEnded: false,
+    justEndedTurn: false,
 
     // start the connection to the server and the other player
     initGameHub: function() {
@@ -33,7 +35,12 @@
 
         // function called by hub when the opponent finishes making a move
         gameHub.client.endOpponentTurn = function (moveData) {
-            switchTurn();
+            if (Connect4.justEndedTurn) {
+                Connect4.justEndedTurn = false;
+                return;
+            }
+
+            Connect4.switchTurn(true, moveData.x, moveData.y);
         };
 
         // function called by hub when the game status changes, such as when
@@ -53,11 +60,29 @@
                 //Connect4.$turnNumber.text(++Connect4.currentTurn);
                 //Connect4.$turnNumber.closest('.info').fadeIn(50);
 
-                Connect4.startGame();
-                switchTurn(false); // no need to switch turns at the start of the game
+                Connect4.startGame(data.moves);
+                if (data.moves !== undefined) {
+                    if (!Connect4.isAuthor)
+                        Connect4.activePlayer = data.first_turn == 1 ? 0 : 1;
+                    Connect4.switchTurn();
+                } else {
+                    Connect4.switchTurn(false); // otherwise no need to switch turns at the start of the game
+                }
                 Connect4.$currentTurnMsg.closest('.info').fadeIn(50);
             } else if (newStatus == 1) {
-
+                var victoryMessage = "You won!";
+                if (!Connect4.justEndedTurn) {
+                    victoryMessage = "You lost!";
+                    Connect4.addPiece(data.x, data.y);
+                    Connect4.animateDropPiece(Connect4.gameSpaces[data.x][data.y], "red").done(function () {
+                        alert(victoryMessage);
+                        Connect4.$gameStatusMsg.text('You have lost.');
+                    });
+                } else {
+                    alert(victoryMessage);
+                    Connect4.$gameStatusMsg.text('You have won.');
+                }
+                Connect4.$currentTurnMsg.closest('.info').hide();
             } else if (newStatus == 2) {
 
             }
@@ -67,29 +92,48 @@
             // join the current room
             return gameHub.server.joinGame(Connect4.roomID);
         };
-        function startGame() {
+        function startGame(data) {
             var deferred = $.Deferred();
-            // if the current player is not the author of the room,
-            // this means that the game has two participants and it may start
-            if (!Connect4.isAuthor)
-            {
-                console.log("starting game...");
-                return gameHub.server.startGame(Connect4.roomID);
-            }
-            console.log("waiting for opponent...");
-            return deferred.resolve();
+
+            // if the game is already in progress, then load the pieces on the board
+            /*if (data.gameStarted === true) {
+                Connect4.$gameStatusMsg.text('Game in progress.');
+                Connect4.activePlayer = data.first_turn;
+                
+                for (var i = 0; i < count(data.moves) ; i++) {
+                    var x = data.moves[i][x], y = data.moves[i][y];
+                    var moveColor = data.moves[i]['color'];
+                    Connect4.addPiece(x, y);
+                    Connect4.animateDropPiece(Connect4.gameSpaces[x][y], moveColor, true);
+                }
+
+                Connect4.startGame();
+                Connect4.switchTurn(false); // no need to switch turns at the start of the game
+                Connect4.$currentTurnMsg.closest('.info').fadeIn(50);
+
+            } else {*/
+
+                // if the current player is not the author of the room,
+                // this means that the game has two participants and it may start
+                if (!Connect4.isAuthor && !Connect4.gameInProgress) {
+                    console.log("starting game...");
+                    return gameHub.server.startGame(Connect4.roomID);
+                }
+                console.log("waiting for opponent...");
+
+            //}
+            return deferred.promise();
         }
-        Connect4.hubConnection.start().done().then(joinGame).then(startGame).then(function() {
-            //Connect4.startGame();
-        }).fail(function(error) {
+        Connect4.hubConnection.start().done().then(joinGame).then(startGame).fail(function(error) {
             alert(error);
         });
     },
 
     // load game variables and draw the game board
-    loadGame: function ($, isAuthor, roomID, gameHub, hubConnection) {
+    loadGame: function ($, isAuthor, roomID, gameInProgress, gameHub, hubConnection) {
         Connect4.isAuthor = isAuthor;
         Connect4.roomID = roomID;
+        Connect4.gameInProgress = gameInProgress;
         //Connect4.currentTurn = 0;
         Connect4.gameSpaces = {};
         Connect4.gamePieces = [];
@@ -171,7 +215,7 @@
         Connect4.initGameHub();
     },
 
-    startGame: function () {
+    startGame: function (loadedMoves) {
         var fg_ctx = Connect4.fg_ctx;
 
         currentMousePos = null;
@@ -211,6 +255,16 @@
                 return Connect4.gamePieceIndex[box.y_index].indexOf(box.x_index) > -1;
             }
             return false;
+        }
+
+        // load previous moves if this was a game in progress
+        if (loadedMoves !== undefined) {
+            for (var i = 0; i < loadedMoves.length ; i++) {
+                var x = loadedMoves[i].x, y = loadedMoves[i].y;
+                var moveColor = loadedMoves[i].color;
+                Connect4.addPiece(x, y);
+                Connect4.animateDropPiece(Connect4.gameSpaces[x][y], moveColor, true);
+            }
         }
 
         // if the mouse leaves the canvas, remove the highlighted square
@@ -277,52 +331,71 @@
                 if (highlightedRect)
                     fg_ctx.clearRect(highlightedRect.x, highlightedRect.y, Connect4.getSqSize(), Connect4.getSqSize());
                 highlightedRect = null;
-
-                Connect4.addPiece(mouseBox.x_index, mouseBox.y_index);
+                var x_index = mouseBox.x_index, y_index = mouseBox.y_index;
+                Connect4.addPiece(x_index, y_index);
 
                 // remove highlight
                 if (highlightedRect) {
                     fg_ctx.clearRect(highlightedRect.x, highlightedRect.y, Connect4.getSqSize(), Connect4.getSqSize());
                 }
-                fg_ctx.beginPath();
-                fg_ctx.arc(mouseBox.x + (Connect4.getSqSize() / 2), (Connect4.getSqSize() / 2) * -1, Connect4.getSqSize() / 2.3, 0, 2 * Math.PI);
-                fg_ctx.fillStyle = "blue";
-                fg_ctx.fill();
-                var totalDistance = (mouseBox.y_index + 1) * Connect4.getSqSize() - Connect4.getSqSize() / 2;
-                var currentPos = (Connect4.getSqSize() / 2) * -1;
-                var speed = 6;
-                (function startAnimation() {
-                    var deferred = $.Deferred();
-
-                    var animation = setInterval(function () {
-                        // clear the circle first before redrawing in new position
-                        fg_ctx.clearRect(mouseBox.x, currentPos - (Connect4.getSqSize() / 2), Connect4.getSqSize(), Connect4.getSqSize());
-
-                        if (currentPos + speed > totalDistance)
-                            speed = totalDistance - currentPos;
-                        currentPos += speed;
-
-                        fg_ctx.beginPath();
-                        fg_ctx.arc(mouseBox.x + (Connect4.getSqSize() / 2), currentPos, Connect4.getSqSize() / 2.3, 0, 2 * Math.PI);
-                        fg_ctx.fillStyle = "blue";
-                        fg_ctx.fill();
-
-                        if (currentPos >= totalDistance) {
-                            clearInterval(animation);
-                            deferred.resolve();
-                        }
-                    }, 0.1);
-
-                    return deferred;
-                })().done(function() {
+                Connect4.animateDropPiece(Connect4.gameSpaces[x_index][y_index], "blue").done(function () {
                     setTimeout(function () {
                         Connect4.placingPiece = false;
-
-                        Connect4.switchTurn(true, mouseBox.x_index, mouseBox.y_index);
+                        Connect4.justEndedTurn = true;
+                        Connect4.switchTurn(true, x_index, y_index);
                     }, 100);
                 });
             }
         };
+    },
+
+    // animate the dropping of the piece on the board
+    // called after the player moves or after the opponent moves
+    // returns async function that can be chained to another event, such as ending the turn or ending the game
+    animateDropPiece: function (mouseBox, color, fastDrop) {
+        if (fastDrop === undefined)
+            fastDrop = false;
+        var fg_ctx = Connect4.fg_ctx;
+
+        if (fastDrop) {
+            fg_ctx.beginPath();
+            fg_ctx.arc(mouseBox.x + (Connect4.getSqSize() / 2), mouseBox.y + (Connect4.getSqSize() / 2), Connect4.getSqSize() / 2.3, 0, 2 * Math.PI);
+            fg_ctx.fillStyle = color;
+            fg_ctx.fill();
+            return $.Deferred().resolve();
+        }
+
+        fg_ctx.beginPath();
+        fg_ctx.arc(mouseBox.x + (Connect4.getSqSize() / 2), (Connect4.getSqSize() / 2) * -1, Connect4.getSqSize() / 2.3, 0, 2 * Math.PI);
+        fg_ctx.fillStyle = color;
+        fg_ctx.fill();
+        var totalDistance = (mouseBox.y_index + 1) * Connect4.getSqSize() - Connect4.getSqSize() / 2;
+        var currentPos = (Connect4.getSqSize() / 2) * -1;
+        var speed = 6;
+        return (function startAnimation() {
+            var deferred = $.Deferred();
+
+            var animation = setInterval(function () {
+                // clear the circle first before redrawing in new position
+                fg_ctx.clearRect(mouseBox.x, currentPos - (Connect4.getSqSize() / 2), Connect4.getSqSize(), Connect4.getSqSize());
+
+                if (currentPos + speed > totalDistance)
+                    speed = totalDistance - currentPos;
+                currentPos += speed;
+
+                fg_ctx.beginPath();
+                fg_ctx.arc(mouseBox.x + (Connect4.getSqSize() / 2), currentPos, Connect4.getSqSize() / 2.3, 0, 2 * Math.PI);
+                fg_ctx.fillStyle = color;
+                fg_ctx.fill();
+
+                if (currentPos >= totalDistance) {
+                    clearInterval(animation);
+                    deferred.resolve();
+                }
+            }, 0.1);
+
+            return deferred;
+        })();
     },
 
     getSqSize: function () {
@@ -339,7 +412,7 @@
     },
 
     playerIsActive: function() {
-        return !Connect4.placingPiece && !Connect4.turnEnded;
+        return Connect4.placingPiece || !Connect4.turnEnded;
     },
     switchTurn: function (switchByDefault, x, y) {
         if (switchByDefault === undefined || switchByDefault === true) {
@@ -348,11 +421,18 @@
 
         if (Connect4.isAuthor && Connect4.activePlayer === 1 ||
             !Connect4.isAuthor && Connect4.activePlayer === 0) {
+
             // end turn
             Connect4.turnEnded = true;
-            Connect4.gameHub.server.endTurn(Connect4.roomID, x, y);
+            if (switchByDefault === undefined || switchByDefault === true)
+                Connect4.gameHub.server.endTurn(Connect4.roomID, x, y);
 
         } else {
+            if (x !== undefined && x !== null) {
+                // animate the piece dropping
+                Connect4.addPiece(x, y);
+                Connect4.animateDropPiece(Connect4.gameSpaces[x][y], "red");
+            }
             // start turn
             Connect4.turnEnded = false;
 

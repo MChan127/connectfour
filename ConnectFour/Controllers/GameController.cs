@@ -33,11 +33,19 @@ namespace ConnectFour.Controllers
             {
                 return HttpNotFound();
             }
-            // the player can only enter the room if the game is currently not in progress,
-            // and if the game has not ended
-            if (room.Status.ToString() == "playing" || room.Status.ToString() == "finished")
+            // player can only enter the room if it's in "waiting" status (no opponent yet)
+            // or if the player belongs to the room and the room is a game in progress
+            if (room.Status == (int)RoomStatus.playing)
             {
-                return new HttpStatusCodeResult(HttpStatusCode.Forbidden);
+                if (room.AuthorID != User.Identity.GetUserId() &&
+                    room.OpponentID != User.Identity.GetUserId())
+                {
+                    return new HttpStatusCodeResult(HttpStatusCode.Forbidden);
+                }
+            } else if (room.Status == (int)RoomStatus.finished)
+            {
+                ViewBag.message = "The game you are trying to access has already finished.";
+                return View("Error");
             }
 
             //string playerID = User.Identity.GetUserId();

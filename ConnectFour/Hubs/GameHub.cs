@@ -10,6 +10,8 @@ using Microsoft.AspNet.Identity.Owin;
 using System.Security.Claims;
 using System.Data.Entity;
 using System.Diagnostics;
+using System.Data.SqlClient;
+using System.Data.Entity.Core;
 
 namespace ConnectFour.Hubs
 {
@@ -45,12 +47,56 @@ namespace ConnectFour.Hubs
             {
                 throw new Exception("The room with that ID does not exist.");
             }
-            // check that the current game has not started or ended yet
-            if (room.Status.ToString() == "playing" || room.Status.ToString() == "finished")
+            // player can only enter the room if it's in "waiting" status (no opponent yet)
+            // or if the player belongs to the room and the room is a game in progress
+            if (room.Status == (int)RoomStatus.playing)
             {
-                throw new Exception("The game is currently in progress.");
+                string playerID = ((ClaimsIdentity)Context.User.Identity).FindFirst(ClaimTypes.NameIdentifier).Value;
+                if (room.AuthorID != playerID &&
+                    room.OpponentID != playerID)
+                {
+                    throw new Exception("You do not have permission to access this game.");
+                }
+
+                List<Move> allMoves = db.Move.Where(m => m.RoomID == roomID).OrderByDescending(m => m.ID).ToList();
+                if (allMoves.Count == 0)
+                {
+                    Clients.Client(Context.ConnectionId).updateGameStatus(updateGameStatus.GAME_START, new
+                    {
+                        moves = new { },
+                        first_turn = room.FirstMoveID == playerID ? 1 : 0
+                    });
+                }
+                else
+                {
+                    // firstTurn is reverse of above because the player id below is the one
+                    // who moved previously as opposed to who should go first
+                    int firstTurn = allMoves.First().PlayerID == playerID ? 0 : 1;
+                    List<Object> moveData = new List<Object>();
+                    foreach (Move move in allMoves)
+                    {
+                        var moveObject = new
+                        {
+                            x = move.XPos,
+                            y = move.YPos,
+                            color = move.PlayerID == playerID ? "blue" : "red"
+                        };
+                        moveData.Add(moveObject);
+                    }
+
+                    //await Groups.Add(Context.ConnectionId, roomName);
+
+                    Clients.Client(Context.ConnectionId).updateGameStatus(updateGameStatus.GAME_START, new
+                    {
+                        moves = moveData,
+                        first_turn = firstTurn
+                    });
+                }
             }
-            Debug.WriteLine("connection id: " + Context.ConnectionId);
+            else if (room.Status == (int)RoomStatus.finished)
+            {
+                throw new Exception("The game you are trying to access has already finished.");
+            }
             await Groups.Add(Context.ConnectionId, roomName);
         }
 
@@ -63,7 +109,7 @@ namespace ConnectFour.Hubs
                 throw new Exception("The room with that ID does not exist.");
             }
             // check that the current game has not started or ended yet
-            if (room.Status.ToString() == "playing" || room.Status.ToString() == "finished")
+            if (room.Status == (int)RoomStatus.playing || room.Status == (int)RoomStatus.finished)
             {
                 throw new Exception("The game is currently in progress.");
             }
@@ -95,14 +141,19 @@ namespace ConnectFour.Hubs
             {
                 throw new Exception("The room with that ID does not exist.");
             }
-            // check that the current game is in progress
-            if (room.Status.ToString() != "playing")
+            // check that the game is in progress
+            // and that the player belongs to this room
+            if (room.Status == (int)RoomStatus.playing)
             {
-                throw new Exception("The game is currently not in progress.");
+                if (room.AuthorID != playerID &&
+                    room.OpponentID != playerID)
+                {
+                    throw new Exception("You do not have permission to access this game.");
+                }
             }
 
             // check that it's this player's turn to make a move
-            Move lastMove = db.Move.OrderByDescending(m => m.ID).First(m => m.RoomID == roomID);
+            Move lastMove = db.Move.Where(m => m.RoomID == roomID).OrderByDescending(m => m.ID).FirstOrDefault();
             if (lastMove != null) {
                 if (lastMove.PlayerID == playerID)
                 {
@@ -110,7 +161,7 @@ namespace ConnectFour.Hubs
                 }
             } else
             {
-                if (room.FirstMoveID == playerID)
+                if (room.FirstMoveID != playerID)
                 {
                     throw new Exception("A player cannot move two turns in a row.");
                 }
@@ -136,7 +187,8 @@ namespace ConnectFour.Hubs
             move.RoomID = roomID;
             move.XPos = x;
             move.YPos = y;
-            db.Entry(move).State = EntityState.Modified;
+            move.CreatedAt = DateTime.Today;
+            db.Move.Add(move);
             await db.SaveChangesAsync();
 
             // server checks if this is a winning move
@@ -153,7 +205,8 @@ namespace ConnectFour.Hubs
 
                 await Clients.Group(roomID.ToString()).updateGameStatus(updateGameStatus.WON_GAME, new
                 {
-                    winnerID = playerID
+                    x = x,
+                    y = y
                 });
             }
             else
@@ -161,7 +214,7 @@ namespace ConnectFour.Hubs
                 room.UpdatedAt = DateTime.Today;
                 db.Entry(room).State = EntityState.Modified;
                 await db.SaveChangesAsync();
-
+                
                 await Clients.Group(roomID.ToString()).endOpponentTurn(new
                 {
                     x = x,
@@ -173,18 +226,30 @@ namespace ConnectFour.Hubs
         private bool checkIfWinningMove(int roomID, string playerID, int x, int y)
         {
             // get all moves for this room from this player
-            var queryString = "SELECT XPos, YPos FROM Moves WHERE RoomID = @0 AND PlayerID = @1 AND " +
-                "ABS(XPos - @2) <= 3 ORDER BY XPos ASC;";
-            List<Move> allMoves = db.Move.SqlQuery(queryString, roomID, playerID, x).ToList();
+            List<Move> allMoves = new List<Move>();
+            try
+            {
+                var queryString = "SELECT ID, RoomID, PlayerID, XPos, YPos, CreatedAt FROM Moves WHERE RoomID = @0 AND PlayerID = @1 AND " +
+                    "ABS(XPos - @2) <= 3 ORDER BY XPos ASC;";
+                allMoves = db.Database.SqlQuery<Move>(queryString, new SqlParameter("0", roomID), new SqlParameter("1", playerID), new SqlParameter("2", x)).ToList();
+                if (allMoves.Count < 2)
+                {
+                    return false;
+                }
+            } catch (EntityCommandExecutionException e)
+            {
+                Debug.WriteLine(e.Message);
+            }
 
             // create a dictionary of all the moves to represent a grid
             // with the x axis coordinates as keys and y coordinates as values
             SortedDictionary<int, List<int>> moveGrid = new SortedDictionary<int, List<int>>();
             foreach (Move move in allMoves)
             {
-                List<int> gridColumn = new List<int>();
+                List<int> gridColumn;
                 if (!moveGrid.TryGetValue(move.XPos, out gridColumn))
                 {
+                    gridColumn = new List<int>();
                     gridColumn.Add(move.YPos);
                     moveGrid.Add(move.XPos, gridColumn);
                 } else {
@@ -195,7 +260,7 @@ namespace ConnectFour.Hubs
 
             // remove columns that are a distance or more removed from the column containing the player's move
             // for example, if we have columns [0, 2, 3, 4, 6] and our move is in column 3, columns 0 and 6 should be removed
-            bool foundLeftMostColumn = false, foundRightMostColumn = false;
+            /*bool foundLeftMostColumn = false, foundRightMostColumn = false;
             string direction = "left";
             int startingColumn = y;
             while (!foundLeftMostColumn || !foundRightMostColumn)
@@ -242,7 +307,7 @@ namespace ConnectFour.Hubs
                         foundRightMostColumn = true;
                     }
                 }
-            }
+            }*/
 
             // search for a four-in-a-row
             if (this.searchForFourInRow(moveGrid, x, y, "vertical", new List<int>()))

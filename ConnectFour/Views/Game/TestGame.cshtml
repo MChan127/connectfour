@@ -36,7 +36,7 @@
     <script src="~/signalr/hubs"></script>
     <script>
         $(function () {
-            Connect4.loadGame($, @isAuthor.ToString().ToLower(), @Model.ID, $.connection.gameHub, $.connection.hub);
+            Connect4.loadGame($, @isAuthor.ToString().ToLower(), @Model.ID, @Model.Status === 1, $.connection.gameHub, $.connection.hub);
         });
     </script>
     @Scripts.Render("~/bundles/game")
