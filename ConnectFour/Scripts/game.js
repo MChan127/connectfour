@@ -28,6 +28,7 @@
     placingPiece: false,
     turnEnded: false,
     justEndedTurn: false,
+    justConceded: false,
 
     // start the connection to the server and the other player
     initGameHub: function() {
@@ -48,7 +49,7 @@
         // possible values of newStatus:
         // 0 = game start
         // 1 = victory/loss
-        // 2 = opponent left the game
+        // 2 = conceded the game
         gameHub.client.updateGameStatus = function (newStatus, data) {
             if (data === undefined) {
                 data = {};
@@ -83,8 +84,19 @@
                     Connect4.$gameStatusMsg.text('You have won.');
                 }
                 Connect4.$currentTurnMsg.closest('.info').hide();
+                Connect4.concedeButton.closest('li').hide();
             } else if (newStatus == 2) {
+                var concedeMessage = "Your opponent has conceded.";
+                if (Connect4.justConceded) {
+                    Connect4.turnEnded = true;
+                    concedeMessage = "You have conceded the game.";
+                }
+                
+                alert(concedeMessage);
+                Connect4.$gameStatusMsg.text(concedeMessage);
 
+                Connect4.$currentTurnMsg.closest('.info').hide();
+                Connect4.concedeButton.closest('li').hide();
             }
         };
 
@@ -152,6 +164,7 @@
         Connect4.currentTurn = 0;
         Connect4.gamePieces = [];
         Connect4.gamePieceIndex = {};
+        Connect4.concedeButton = $('#concedeButton');
         
         Connect4.bg_canvas = document.getElementById('gameGrid');
         Connect4.bg_ctx = Connect4.bg_canvas.getContext('2d');
@@ -347,6 +360,15 @@
                 });
             }
         };
+
+        Connect4.concedeButton.click(function () {
+            if (!Connect4.playerIsActive)
+                return;
+            if (window.confirm("Are you sure you want to concede?")) {
+                Connect4.justConceded = true;
+                Connect4.gameHub.server.concedeGame(Connect4.roomID);
+            }
+        });
     },
 
     // animate the dropping of the piece on the board
@@ -371,7 +393,7 @@
         fg_ctx.fill();
         var totalDistance = (mouseBox.y_index + 1) * Connect4.getSqSize() - Connect4.getSqSize() / 2;
         var currentPos = (Connect4.getSqSize() / 2) * -1;
-        var speed = 6;
+        var speed = 8;
         return (function startAnimation() {
             var deferred = $.Deferred();
 
@@ -424,6 +446,7 @@
 
             // end turn
             Connect4.turnEnded = true;
+            Connect4.concedeButton.closest('li').hide();
             if (switchByDefault === undefined || switchByDefault === true)
                 Connect4.gameHub.server.endTurn(Connect4.roomID, x, y);
 
@@ -435,6 +458,7 @@
             }
             // start turn
             Connect4.turnEnded = false;
+            Connect4.concedeButton.closest('li').show();
 
         }
         Connect4.$currentTurnMsg.text(Connect4.activePlayerMsgs[Connect4.activePlayer]);

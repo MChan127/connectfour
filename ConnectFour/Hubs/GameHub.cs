@@ -409,5 +409,54 @@ namespace ConnectFour.Hubs
 
             return totalInRow == 4;
         }
+
+        public async Task concedeGame(int roomID)
+        {
+            string playerID = ((ClaimsIdentity)Context.User.Identity).FindFirst(ClaimTypes.NameIdentifier).Value;
+
+            Room room = db.Room.Where(Room => Room.ID == roomID).FirstOrDefault();
+            // check if room exists
+            if (room == null)
+            {
+                throw new Exception("The room with that ID does not exist.");
+            }
+            // player can only enter the room if it's in "waiting" status (no opponent yet)
+            // or if the player belongs to the room and the room is a game in progress
+            if (room.Status != (int)RoomStatus.playing)
+            {
+                throw new Exception("The game you are trying to access is not in progress.");
+            }
+
+            // check that it's this player's turn to make a move
+            Move lastMove = db.Move.Where(m => m.RoomID == roomID).OrderByDescending(m => m.ID).FirstOrDefault();
+            if (lastMove != null)
+            {
+                if (lastMove.PlayerID == playerID)
+                {
+                    throw new Exception("You cannot concede during your opponent's turn.");
+                }
+            }
+            else
+            {
+                if (room.FirstMoveID != playerID)
+                {
+                    throw new Exception("You cannot concede during your opponent's turn.");
+                }
+            }
+
+            if (room.AuthorID != playerID &&
+                room.OpponentID != playerID)
+            {
+                throw new Exception("You do not have permission to access this game.");
+            }
+
+            room.Status = (int)RoomStatus.finished;
+            room.UpdatedAt = DateTime.Today;
+            room.WinnerID = room.AuthorID == playerID ? room.OpponentID : room.AuthorID;
+            db.Entry(room).State = EntityState.Modified;
+            await db.SaveChangesAsync();
+
+            await Clients.Group(roomID.ToString()).updateGameStatus(updateGameStatus.OPPONENT_FORFEIT);
+        }
     }
 }

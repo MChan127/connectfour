@@ -1,4 +1,159 @@
-﻿@{
-    ViewBag.Title = "Game Lobby";
+﻿@model List<ConnectFour.Models.Room>
+
+@{
+	ViewBag.Title = "Game Lobby";
 }
 
+@if (ViewBag.currentGameId != null) {
+
+	<p>
+		You are currently in a game: <a href="@Url.Action("Room", "Game")/@ViewBag.currentGameId">@ViewBag.currentGameName</a>. 
+		
+		<br/><br/>To join or create other games, please finish or concede the current game.
+	</p>
+
+} else {
+
+	@section lobby_menu {
+		<div id="create_room_modal" style="display: none;">
+			<h2>Create New Game</h2>
+
+			<form action="@Url.Action("Create", "Game")" method="POST">
+				<label for="room_name">Room Name</label> 
+				<input type="text" name="room_name" />
+
+				<br/><br/>
+				<button type="submit">Create</button>
+			</form>
+		</div>
+
+		<svg style="
+			position: absolute;
+			top: -1000px;
+		">
+			<defs>
+				<filter id="circle_drop_shadow" x="0" y="0" width="200%" height="200%">
+					<feOffset result="offOut" in="SourceAlpha" dx="5" dy="5" />
+					<feGaussianBlur result="blurOut" in="offOut" stdDeviation="3" />
+					<feBlend in="SourceGraphic" in2="blurOut" mode="normal" />
+				</filter>
+			</defs>
+			<g id="lobbyButton" stroke="#000" stroke-width="2" filter="url(#circle_drop_shadow)">
+				<circle cx="20" cy="32" r="9" fill="#FC3C3C" />
+				<circle cx="31" cy="26" r="12" fill="#E92F2F" />
+				<circle cx="48" cy="31" r="15" fill="#E91D1D" />
+				<circle cx="72" cy="29" r="23" fill="#FC2323" />
+			</g>
+			<g id="joinGameLobbyButton" stroke="#000" stroke-width="2" filter="url(#circle_drop_shadow)">
+				<circle cx="20" cy="32" r="9" fill="#3C8DFC" />
+				<circle cx="31" cy="26" r="12" fill="#2F6EE9" />
+				<circle cx="48" cy="31" r="15" fill="#1D72E9" />
+				<circle cx="72" cy="29" r="23" fill="#237DFC" />
+			</g>
+			<g id="disabledLobbyButton" filter="url(#circle_drop_shadow)">
+				<circle cx="20" cy="32" r="9" fill="#bbb" />
+				<circle cx="31" cy="26" r="12" fill="#bbb" />
+				<circle cx="48" cy="31" r="15" fill="#bbb" />
+				<circle cx="72" cy="29" r="23" fill="#bbb" />
+			</g>
+		</svg>
+
+		<div id="lobbyMenu">
+			<div id="createGame" class="lobby_button" alt="Create New Game" title="Create New Game">
+				<div class="button_svg">
+					<svg><use xlink:href="#lobbyButton" /></svg>
+				</div>
+				<span>Create</span>
+			</div>
+
+			<div id="joinGame" class="lobby_button disabled" alt="Join Game" title="Join Game">
+				<div class="button_svg">
+					<svg><use xlink:href="#disabledLobbyButton" /></svg>
+				</div>
+				<span>Join</span>
+			</div>
+		</div>
+	}
+
+	if (ViewBag.postMessage != null) {
+		<p style="color: #0093FF;">
+			@ViewBag.postMessage
+		</p>
+	}
+	<p>
+	Select a game to join, or create a new game.
+	</p>
+	<table id="lobbyRooms" class="table">
+		<tr>
+			<th>Room Name</th>
+			<th>Status</th>
+			<th>Created At</th>
+		</tr>
+	
+		@foreach (var room in Model) {
+			<tr class="game-table-row-item" data-id="@room.ID">
+				<td>@room.Name</td>
+				@{
+					if (room.Status == 0) {
+						<text>
+							<td><span style="color: #0080FF;">Waiting</td>
+						</text>
+					} else {
+						<text>
+							<td><span style="color: #4BF218;">Playing</td>
+						</text>
+					}
+				}
+				@*<td>@{
+					if (room.Status == 0) {
+						@:1
+					} else {
+						@:2
+					}
+				}/ 2</td>*@
+				<td>@room.CreatedAt</td>
+			</tr>
+		}
+	</table>
+
+	@section scripts {
+		<script type="text/javascript">
+			$(function () {
+				var selectedRoom = null;
+
+				/*$('.lobby_button').last().find('use').attr('xlink:href', '#disabledLobbyButton');*/
+				$('.lobby_button#createGame').click(function() {
+					$('#create_room_modal').modal({
+						fadeDuration: 100
+					});
+				});
+				$('.game-table-row-item').find('*').andSelf().addClass('table-row-item-element');
+				$('.game-table-row-item').click(function() {
+					$('.game-table-row-item').removeAttr('style');
+					$(this).css({
+						'background-color': '#F387FC'
+					});
+					selectedRoom = $(this).data('id');
+
+					$('.lobby_button#joinGame').find('use').attr('xlink:href', '#joinGameLobbyButton');
+					$('.lobby_button#joinGame').removeClass('disabled');
+				});
+				$('.lobby_button#joinGame').click(function() {
+					if ($(this).hasClass('disabled') || selectedRoom === null)
+						return;
+
+					window.location.href = "@Url.Action("Room", "Game")" + '/' + selectedRoom;
+				});
+				$(document).on('click', function(e) {
+					if ($(e.target).hasClass('table-row-item-element') !== true) {
+						$('.game-table-row-item').removeAttr('style');
+						$('.lobby_button#joinGame').find('use').attr('xlink:href', '#disabledLobbyButton');
+						$('.lobby_button#joinGame').addClass('disabled');
+						selectedRoom = null;
+					}
+				});
+			});
+		</script>
+	}
+
+}

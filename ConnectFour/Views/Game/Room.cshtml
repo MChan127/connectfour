@@ -28,8 +28,8 @@
         <li class="info" style="display: none;">
             <span class="current_turn_msg" style="color: #FFFF00;"></span>
         </li>
-        <li><a href="@Url.Action("Concee", "Game")" alt="Concede" title="Concede"><span class="bullet">&nbsp;</span>Concede</a></li>
-        <li><a href="@Url.Action("Leave", "Game")" alt="Leave Game" title="Leave Game"><span class="bullet">&nbsp;</span>Leave Game</a></li>
+        <li style="display: none; cursor: pointer;"><a id="concedeButton" alt="Concede" title="Concede"><span class="bullet">&nbsp;</span>Concede</a></li>
+        <li><a href="@Url.Action("Index", "Game")" alt="Leave Game" title="Leave Game"><span class="bullet">&nbsp;</span>Leave Game</a></li>
     </ul>
 }
 @section Scripts {

@@ -28,6 +28,10 @@ a:hover {
     margin-top: 15vh;
     padding: 0 30px 0 20px;
 }
+#topContent {
+	position: relative;
+    top: -8vh;
+}
 #nav {
     height: 95vh;
     width: calc(40vw - 30px);
@@ -102,6 +106,96 @@ a:hover {
     list-style-type: none;
     padding: 0;
     margin: 15px 0;
+}
+
+#lobbyMenu {
+	margin-top: 20px;
+	margin-left: 10px;
+}
+.lobby_button {
+	margin-right: 5%;
+	position: relative;
+	height: 50px;
+	display: inline-block;
+	cursor: pointer;
+}
+.lobby_button.disabled {
+	color: #eee;
+	cursor: default;
+	pointer-events: none;
+}
+.lobby_button .button_svg {
+	position: absolute;
+	top: 0;
+	left: 0;
+}
+.lobby_button svg {
+	height: 60px;
+    width: 105px;
+}
+.lobby_button span {
+	font-family: "Coiny", sans-serif;
+	font-size: 28px;
+	margin-left: 62px;
+	position: relative;
+}
+.table,
+.table tr,
+.table th,
+.table td {
+	border-collapse: collapse;
+	border: 0;
+}
+.table {
+	width: 100%;
+}
+.table th {
+	text-align: left;
+	padding: 5px 3px;
+	background-color: #fff;
+	color: #000;
+}
+.table td {
+	padding: 5px 15px 5px 3px;
+}
+.game-table-row-item {
+	cursor: pointer;
+}
+.game-table-row-item:hover {
+	background-color: rgba(255, 255, 255, 0.35);
+}
+
+#create_room_modal {
+	border-radius: 5px;
+    background-color: #303067;
+}
+#create_room_modal h2 {
+	font-size: 24px;
+	margin: 0 0 35px 0;
+}
+#create_room_modal input {
+	font-size: 18px;
+	line-height: 18px;
+	border: 1px solid #111;
+	margin-left: 10px;
+}
+#create_room_modal button[type="submit"] {
+	border: 0;
+    background-color: #ffffff;
+    font-size: 18px;
+    border-radius: 5px;
+    padding: 7px 15px;
+    color: #000;
+    font-weight: 600;
+    margin: 10px auto 0 auto;
+    display: block;
+    background-color: #fff;
+    cursor: pointer;
+}
+#create_room_modal button[type="submit"]:hover {
+	background-color: #ddd;
+	-webkit-transition: all 0.1s; /* Safari */
+    transition: all 0.1s;
 }
 
 #footer {

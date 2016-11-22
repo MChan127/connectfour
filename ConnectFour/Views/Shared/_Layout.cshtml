@@ -4,61 +4,66 @@
 <!DOCTYPE html>
 <html>
 <head>
-    <meta charset="utf-8" />
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>@ViewBag.Title - Connect Four</title>
-    @Styles.Render("~/Content/css")
-    @Scripts.Render("~/bundles/modernizr")
+	<meta charset="utf-8" />
+	<meta name="viewport" content="width=device-width, initial-scale=1.0">
+	<title>@ViewBag.Title - Connect Four</title>
+	@Styles.Render("~/Content/css")
+	@Scripts.Render("~/bundles/modernizr")
 </head>
 <body>
-    <div id="wrapper">
-        <div id="content">
-            @RenderBody()
-        </div>
-        <div id="nav">
-            <div id="title">Connect Four</div>
-            @if (Request.IsAuthenticated)
-            {
-                string username = ((ClaimsIdentity)User.Identity).FindFirst("username").Value;
-                using (Html.BeginForm("LogOff", "Account", FormMethod.Post, new { id = "logoutForm", @class = "navbar-right" }))
-                {
-                    <text>
-                        @Html.AntiForgeryToken()
-                        <div id="welcomeMsg">
-                            <p>
-                                Welcome, @username!<br/>
-                                <a href="javascript:document.getElementById('logoutForm').submit()" style="text-decoration: underline;"
-                                    alt="Log Out" title="Log Out"
-                                >Log Out</a>
-                            </p>
-                        </div>
-                    </text>
-                }
-            }
-            <ul>
-                <li><a href="@Url.Action("Index", "Home")" alt="Home" title="Home"><span class="bullet">&nbsp;</span>Home</a></li>
-                @if (Request.IsAuthenticated)
-                {
-                    <li><a href="@Url.Action("Index", "Game")" alt="Lobby" title="Lobby"><span class="bullet">&nbsp;</span>Lobby</a></li>
-                }
-                else
-                {
-                    <li><a href="@Url.Action("Login", "Account")" alt="Login" title="Login"><span class="bullet">&nbsp;</span>Login</a></li>
-                }
-                <li><a href="@Url.Action("About", "Home")" alt="About" title="About"><span class="bullet">&nbsp;</span>About</a></li>
-                <li><a href="@Url.Action("Contact", "Home")" alt="Contact" title="Contact"><span class="bullet">&nbsp;</span>Contact</a></li>
-            </ul>
+	<div id="wrapper">
+		<div id="content">
+			<div id="topContent">
+				@RenderSection("lobby_menu", required: false)
+			</div>
 
-            @RenderSection("GameMenu", required: false)
-        </div>
+			@RenderBody()
+		</div>
+		<div id="nav">
+			<div id="title">Connect Four</div>
+			@if (Request.IsAuthenticated)
+			{
+				string username = ((ClaimsIdentity)User.Identity).FindFirst("username").Value;
+				using (Html.BeginForm("LogOff", "Account", FormMethod.Post, new { id = "logoutForm", @class = "navbar-right" }))
+				{
+					<text>
+						@Html.AntiForgeryToken()
+						<div id="welcomeMsg">
+							<p>
+								Welcome, @username!<br/>
+								<a href="javascript:document.getElementById('logoutForm').submit()" style="text-decoration: underline;"
+									alt="Log Out" title="Log Out"
+								>Log Out</a>
+							</p>
+						</div>
+					</text>
+				}
+			}
+			<ul>
+				<li><a href="@Url.Action("Index", "Home")" alt="Home" title="Home"><span class="bullet">&nbsp;</span>Home</a></li>
+				@if (Request.IsAuthenticated)
+				{
+					<li><a href="@Url.Action("Index", "Game")" alt="Lobby" title="Lobby"><span class="bullet">&nbsp;</span>Lobby</a></li>
+				}
+				else
+				{
+					<li><a href="@Url.Action("Login", "Account")" alt="Login" title="Login"><span class="bullet">&nbsp;</span>Login</a></li>
+				}
+				<li><a href="@Url.Action("About", "Home")" alt="About" title="About"><span class="bullet">&nbsp;</span>About</a></li>
+				<li><a href="@Url.Action("Contact", "Home")" alt="Contact" title="Contact"><span class="bullet">&nbsp;</span>Contact</a></li>
+			</ul>
 
-        <div id="footer">
-            Site created by Matthew Chan, 2016.
-        </div>
-    </div>
+			@RenderSection("GameMenu", required: false)
+		</div>
 
-    @Scripts.Render("~/bundles/jquery")
-    @Scripts.Render("~/bundles/bootstrap")
-    @RenderSection("scripts", required: false)
+		<div id="footer">
+			Site created by Matthew Chan, 2016.
+		</div>
+	</div>
+
+	@Scripts.Render("~/bundles/jquery")
+	@Scripts.Render("~/bundles/bootstrap")
+	@Scripts.Render("~/bundles/js")
+	@RenderSection("scripts", required: false)
 </body>
 </html>

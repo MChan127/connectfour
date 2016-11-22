@@ -27,10 +27,15 @@ namespace ConnectFour
             bundles.Add(new ScriptBundle("~/bundles/game").Include(
                       "~/Scripts/game.js"));
 
+            // other js
+            bundles.Add(new ScriptBundle("~/bundles/js").Include(
+                      "~/Scripts/jquery.modal.js"));
+
             bundles.Add(new StyleBundle("~/Content/css").Include(
                       //"~/Content/bootstrap.css",
                       "~/Content/site.css",
-                      "~/Content/game.css"));
+                      "~/Content/game.css",
+                      "~/Content/jquery.modal.css"));
         }
     }
 }
