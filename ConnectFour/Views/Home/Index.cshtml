@@ -1,9 +1,17 @@
-﻿@{
+﻿@using ConnectFour.Models
+
+@{
     ViewBag.Title = "Home";
 }
 
 <p>
-    Welcome to Connect Four!<br /><br />
-
+    Welcome to Connect Four!
+</p>
+<p>
     How to play: Log in, click "Lobby" on the right, create a room, and play against a computer or a friend in a game of Connect Four, where the goal is to line up four game pieces in a row before your opponent.
 </p>
+@if (!Request.IsAuthenticated) {
+	<p>
+		You can also play as a <a href="@Url.Action("RegisterGuest", "Account")">Guest</a>, which does not require registration.
+	</p>
+}

@@ -11,6 +11,7 @@ using Microsoft.AspNet.Identity.Owin;
 using Microsoft.Owin;
 using Microsoft.Owin.Security;
 using ConnectFour.Models;
+using ConnectFour.App_Start;
 
 namespace ConnectFour
 {
@@ -44,7 +45,13 @@ namespace ConnectFour
         {
             var manager = new ApplicationUserManager(new UserStore<ApplicationUser>(context.Get<ApplicationDbContext>()));
             // Configure validation logic for usernames
-            manager.UserValidator = new UserValidator<ApplicationUser>(manager)
+            /*manager.UserValidator = new UserValidator<ApplicationUser>(manager)
+            {
+                AllowOnlyAlphanumericUserNames = false,
+                RequireUniqueEmail = true
+            };*/
+            // use custom user validator so that we don't have to require email addresses for guests
+            manager.UserValidator = new CustomUserValidator<ApplicationUser>(manager)
             {
                 AllowOnlyAlphanumericUserNames = false,
                 RequireUniqueEmail = true

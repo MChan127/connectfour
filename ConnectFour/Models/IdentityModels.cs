@@ -39,4 +39,9 @@ namespace ConnectFour.Models
         public DbSet<Room> Room { get; set; }
         public DbSet<Move> Move { get; set; }
     }
+
+    public static class GuestUser
+    {
+        public static bool isGuest { get; set; }
+    }
 }

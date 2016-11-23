@@ -9,6 +9,7 @@ using Microsoft.AspNet.Identity;
 using Microsoft.AspNet.Identity.Owin;
 using Microsoft.Owin.Security;
 using ConnectFour.Models;
+using System.Diagnostics;
 
 namespace ConnectFour.Controllers
 {
@@ -140,6 +141,34 @@ namespace ConnectFour.Controllers
         public ActionResult Register()
         {
             return View();
+        }
+
+        [AllowAnonymous]
+        public async Task<ActionResult> RegisterGuest()
+        {
+            string sessionID = this.Session.SessionID;
+            string userName = "Guest_" + sessionID + "_" + Guid.NewGuid().ToString("N");
+            string userEmail = userName;
+            var user = new ApplicationUser { UserName = userName, Email = userEmail };
+            Session["isGuest"] = true;
+            var result = await UserManager.CreateAsync(user);
+            if (result.Succeeded)
+            {
+                await SignInManager.SignInAsync(user, isPersistent: false, rememberBrowser: false);
+
+                // For more information on how to enable account confirmation and password reset please visit http://go.microsoft.com/fwlink/?LinkID=320771
+                // Send an email with this link
+                // string code = await UserManager.GenerateEmailConfirmationTokenAsync(user.Id);
+                // var callbackUrl = Url.Action("ConfirmEmail", "Account", new { userId = user.Id, code = code }, protocol: Request.Url.Scheme);
+                // await UserManager.SendEmailAsync(user.Id, "Confirm your account", "Please confirm your account by clicking <a href=\"" + callbackUrl + "\">here</a>");
+
+                return RedirectToAction("Index", "Home");
+            }
+            Debug.WriteLine(result);
+            AddErrors(result);
+
+            // If we got this far, something failed, redisplay form
+            return View("Login");
         }
 
         //
@@ -391,6 +420,7 @@ namespace ConnectFour.Controllers
         [ValidateAntiForgeryToken]
         public ActionResult LogOff()
         {
+            Session["isGuest"] = false;
             AuthenticationManager.SignOut(DefaultAuthenticationTypes.ApplicationCookie);
             return RedirectToAction("Index", "Home");
         }
