@@ -164,7 +164,6 @@ namespace ConnectFour.Controllers
 
                 return RedirectToAction("Index", "Home");
             }
-            Debug.WriteLine(result);
             AddErrors(result);
 
             // If we got this far, something failed, redisplay form

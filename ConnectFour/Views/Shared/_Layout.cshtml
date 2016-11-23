@@ -24,6 +24,10 @@
 			@if (Request.IsAuthenticated)
 			{
 				string username = ((ClaimsIdentity)User.Identity).FindFirst("username").Value;
+				bool isGuest = (bool?)HttpContext.Current.Session["isGuest"] ?? false;
+				if (isGuest) {
+					username = "Guest";
+				}
 				using (Html.BeginForm("LogOff", "Account", FormMethod.Post, new { id = "logoutForm", @class = "navbar-right" }))
 				{
 					<text>
