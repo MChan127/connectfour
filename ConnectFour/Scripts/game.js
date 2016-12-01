@@ -10,6 +10,7 @@
     gamePieces: null, // array of all game pieces placed in the game so far
     gamePieceIndex: null, // index of gamePieces so that we can find a particular piece more quickly
                           // given a vertical position
+    gamePieceColors: null,
     hubConnection: null,
     gameHub: null, // object for communicating with SignalR hub on the server
 
@@ -74,7 +75,7 @@
                 var victoryMessage = "You won!";
                 if (!Connect4.justEndedTurn) {
                     victoryMessage = "You lost!";
-                    Connect4.addPiece(data.x, data.y);
+                    Connect4.addPiece(data.x, data.y, 'red');
                     Connect4.animateDropPiece(Connect4.gameSpaces[data.x][data.y], "red").done(function () {
                         alert(victoryMessage);
                         Connect4.$gameStatusMsg.text('You have lost.');
@@ -150,6 +151,7 @@
         Connect4.gameSpaces = {};
         Connect4.gamePieces = [];
         Connect4.gamePieceIndex = {};
+        Connect4.gamePieceColors = {};
         Connect4.gameHub = gameHub;
         Connect4.hubConnection = hubConnection;
 
@@ -177,6 +179,15 @@
         drawGrid(Connect4.bg_canvas, Connect4.fg_canvas, Connect4.bg_ctx);
         $(window).resize(function () {
             drawGrid(Connect4.bg_canvas, Connect4.fg_canvas, Connect4.bg_ctx);
+
+            // redraw all the pieces on the board
+            for (var y in Connect4.gamePieceIndex) {
+                for (var i = 0; i < Connect4.gamePieceIndex[y].length; i++) {
+                    var x = Connect4.gamePieceIndex[y][i];
+                    var moveColor = Connect4.gamePieceColors[x][y];
+                    Connect4.animateDropPiece(Connect4.gameSpaces[x][y], moveColor, true);
+                }
+            }
         });
 
         function drawGrid(gridElem, boardElem, grid) {
@@ -223,6 +234,10 @@
                 y_pos = 0;
                 x_pos += Connect4.getSqSize();
             }
+
+            // resize navigation on right side if the game board is larger
+            if ($(gridElem).offset().top + $(gridElem).outerHeight() > $('#nav').outerHeight())
+                $('#nav').height($(gridElem).offset().top + $(gridElem).outerHeight() + 15);
         }
 
         Connect4.initGameHub();
@@ -275,7 +290,7 @@
             for (var i = 0; i < loadedMoves.length ; i++) {
                 var x = loadedMoves[i].x, y = loadedMoves[i].y;
                 var moveColor = loadedMoves[i].color;
-                Connect4.addPiece(x, y);
+                Connect4.addPiece(x, y, moveColor);
                 Connect4.animateDropPiece(Connect4.gameSpaces[x][y], moveColor, true);
             }
         }
@@ -345,7 +360,7 @@
                     fg_ctx.clearRect(highlightedRect.x, highlightedRect.y, Connect4.getSqSize(), Connect4.getSqSize());
                 highlightedRect = null;
                 var x_index = mouseBox.x_index, y_index = mouseBox.y_index;
-                Connect4.addPiece(x_index, y_index);
+                Connect4.addPiece(x_index, y_index, 'blue');
 
                 // remove highlight
                 if (highlightedRect) {
@@ -426,11 +441,15 @@
     setSqSize: function (newSize) {
         Connect4.squareSize = newSize;
     },
-    addPiece: function (x, y) {
+    addPiece: function (x, y, color) {
         if (Connect4.gamePieceIndex[y] === undefined || Connect4.gamePieceIndex === null) {
             Connect4.gamePieceIndex[y] = [];
         }
+        if (Connect4.gamePieceColors[x] === undefined || Connect4.gamePieceColors === null) {
+            Connect4.gamePieceColors[x] = [];
+        }
         Connect4.gamePieceIndex[y].push(x);
+        Connect4.gamePieceColors[x][y] = color;
     },
 
     playerIsActive: function() {
@@ -453,12 +472,16 @@
         } else {
             if (x !== undefined && x !== null) {
                 // animate the piece dropping
-                Connect4.addPiece(x, y);
-                Connect4.animateDropPiece(Connect4.gameSpaces[x][y], "red");
+                Connect4.addPiece(x, y, 'red');
+                Connect4.animateDropPiece(Connect4.gameSpaces[x][y], "red").done(function () {
+                    Connect4.turnEnded = false;
+                    Connect4.concedeButton.closest('li').show();
+                });
+            } else {
+                // start turn
+                Connect4.turnEnded = false;
+                Connect4.concedeButton.closest('li').show();
             }
-            // start turn
-            Connect4.turnEnded = false;
-            Connect4.concedeButton.closest('li').show();
 
         }
         Connect4.$currentTurnMsg.text(Connect4.activePlayerMsgs[Connect4.activePlayer]);
