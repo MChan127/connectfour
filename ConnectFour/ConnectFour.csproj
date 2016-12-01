@@ -209,6 +209,7 @@
     <Content Include="Scripts\bootstrap.js" />
     <Content Include="Scripts\bootstrap.min.js" />
     <Content Include="Content\jquery.modal.css" />
+    <Content Include="ConnectionStrings.config" />
     <None Include="Scripts\jquery-1.10.2.intellisense.js" />
     <Content Include="Scripts\game.js" />
     <Content Include="Scripts\jquery-1.10.2.js" />
